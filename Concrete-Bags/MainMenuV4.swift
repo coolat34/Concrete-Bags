@@ -1,4 +1,4 @@
-//
+/*
 //  ContentView.swift
 //  Concrete-Bags
 //
@@ -13,29 +13,28 @@ class ShapeDetailViewModel: ObservableObject {
     @Published var Width: Double = 0.0
     @Published var Height: Double = 0.0
     @Published var Diameter: Double = 0.0
-    @Published var Diametersmall: Double = 0.0
-    @Published var DiameterLarge: Double = 0.0
+    @Published var DiameterIn: Double = 0.0
     @Published var Area: Double = 0.0
     @Published var Volume: Double = 0.0
     @Published var Bags20kg: Double = 0.0
     @Published var Bags25kg: Double = 0.0
     @Published var Bags30kg: Double = 0.0
-    @Published var measureSelected: String = "Millimetres"
+    @Published var selectedMeasurement: String = "Millimetres"
     @Published var note: String = "mm"
     
     let measurements: [String] = ["Millimetres", "Centimetres", "Metres", "Inches", "Feet"]
-    let notationAbr: [String] = ["mm", "cm", "m", "in", "ft"]
+    let notation: [String] = ["mm", "cm", "m", "in", "ft"]
     
     @Published var showError: Bool = false
     @Published var errorMessage: String = ""
  
 // Calculate all values when a variable is entered or changed
-    func updateValuesShape(shapeAbr: String) {
+    func updateValuesShape(shapeSelected: String) {
 // Calc area, Vol & Bags
         let valResult = DataHandler.shapeFigs(
             A: Len, B: Width, C: Height,
-            D: Diameter, E: Diametersmall,
-            F: note, G: shapeAbr, I: DiameterLarge
+            D: Diameter, E: DiameterIn,
+            F: note, G: shapeSelected
         )
         
         Area = valResult.Area
@@ -45,12 +44,12 @@ class ShapeDetailViewModel: ObservableObject {
         Bags30kg = valResult.Bags30kg
     }
 
-// MARK: Update the notationAbr if the Measurement changes
-    func updateMeasurement(_ newMeasurement: String, shapeAbr: String) {
+// MARK: Update the notation if the Measurement changes
+    func updateMeasurement(_ newMeasurement: String, shapeSelected: String) {
         if let index = measurements.firstIndex(of: newMeasurement) {
-            note = notationAbr[index]
+            note = notation[index]
         }
-        updateValuesShape(shapeAbr: shapeAbr)
+        updateValuesShape(shapeSelected: shapeSelected)
     }
 // Reset all input variables
     func resetValues() {
@@ -58,15 +57,14 @@ class ShapeDetailViewModel: ObservableObject {
         Width = 0.0
         Height = 0.0
         Diameter = 0.0
-        Diametersmall = 0.0
+        DiameterIn = 0.0
     }
 
 } // Struct
 
 // Display diagrams of the shapes
-struct MainMenu: View {
+struct MainMenuV4: View {
     var shapeSmalls: [String] = ["ConcreteSlab", "Round", "Segment", "Open Round", "Half Round", "Elliptical Round"]
-//    var shapeAbrArray: String
     @State private var listView = false
     @State private var resetView = false
     
@@ -75,8 +73,8 @@ struct MainMenu: View {
         NavigationStack {
             List {
                 ForEach(shapeSmalls, id: \.self) { shapeSmall in
-          NavigationLink(destination: shapeSmallDetail(shapeSmall: shapeSmall, shapeAbr: String(shapeSmall.prefix(1)))) {
-             shapeSmallRow(shapeSmall: shapeSmall, shapeAbr: String(shapeSmall.prefix(1)))
+                    NavigationLink(destination: shapeSmallDetail(shapeSmall: shapeSmall, shapeSelected: String(shapeSmall.prefix(1)))) {
+                        shapeSmallRow(shapeSmall: shapeSmall, shapeSelected: String(shapeSmall.prefix(1)))
                     }
                     
                 } /// ForEach
@@ -90,8 +88,9 @@ struct MainMenu: View {
 // Display an image of the shape that has been picked
 struct shapeSmallRow: View {
     var shapeSmall: String
-    var shapeAbr: String
-//    var shapeAbrArray: String
+    var shapeSelected: String
+ //   var shapeSelected: String { String(shapeSmall.prefix(1)) }
+
     
     var body: some View {
         
@@ -111,12 +110,13 @@ struct shapeSmallRow: View {
 struct shapeSmallDetail: View {
     @Environment(\.dismiss) var dismiss
     let shapeSmall: String
-    let shapeAbr: String // Contains 1st char of each shape
+    let shapeSelected: String
  // Using @StateObject prevents unnecessary re-renders when multiple properties change.
-//    let shapeAbrArray: String  // Conatains all 1st chars of each shape
     @StateObject private var VM = ShapeDetailViewModel()
     
     var body: some View {
+//       var shapeSelected = shapeSmall.firstIndex
+// print("shapeSlected \(shapeSelected)")
         ZStack {
             Color(red: 0.85, green: 0.95, blue: 0.99)
                 .edgesIgnoringSafeArea(.all)  // Cover the entire screen
@@ -130,8 +130,7 @@ struct shapeSmallDetail: View {
                     Image(shapeSmall)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 250, height: 150)
-//                        .frame(width: 100, height: 100)
+                        .frame(width: 100, height: 100)
                 } // HStack
                 
                 
@@ -140,7 +139,7 @@ struct shapeSmallDetail: View {
                     Button {
                     } label: {
                         
-                        Picker("Measurement", selection: $VM.measureSelected) {
+                        Picker("Measurement", selection: $VM.selectedMeasurement) {
                             ForEach(VM.measurements, id: \.self) {
                                 Text($0).font(.system(size: 18, weight: .bold))
                                 //          .edgesIgnoringSafeArea(.all)
@@ -148,57 +147,62 @@ struct shapeSmallDetail: View {
                         }/// Picker
                         .pickerStyle(.segmented)
                         // Use onChange of for Picker
-                        .onChange(of: VM.measureSelected) {
-                            VM.updateMeasurement(VM.measureSelected, shapeAbr: shapeAbr)
+                        .onChange(of: VM.selectedMeasurement) {
+                            VM.updateMeasurement(VM.selectedMeasurement, shapeSelected: shapeSelected)
                             
                         } // onChange of
                     } // Label
                 }     // HStack
                 .padding(20)
                 
-     //MARK: Measurement Input
-                if shapeAbr == "C" ||
-                   shapeAbr == "S" {
-                    InputField(label: "Length", value: $VM.Len, unit: VM.note)
+                //MARK: Concrete Slab
+                
+                if shapeSmall == "ConcreteSlab" {
+    InputField(label: "Length", value: $VM.Len, unit: VM.note)
                         .onChange(of: VM.Len) {
-                            VM.updateValuesShape(shapeAbr: shapeAbr) }
-
+                VM.updateValuesShape(shapeSelected: shapeSelected) }
                     InputField(label: "Width", value: $VM.Width, unit: VM.note)
-                        .onChange(of: VM.Width) { VM.updateValuesShape(shapeAbr: shapeAbr) }
-                } // Concrete & Segment
-                 
-                 if shapeAbr == "C" ||
-                    shapeAbr == "O" ||
-                    shapeAbr == "S" ||
-                    shapeAbr == "H" ||
-                    shapeAbr == "E" ||
-                    shapeAbr == "R" {
+                        .onChange(of: VM.Width) { VM.updateValuesShape(shapeSelected: shapeSelected) }
                     InputField(label: "Height", value: $VM.Height, unit: VM.note)
                         .onChange(of: VM.Height) {
-                            VM.updateValuesShape(shapeAbr: shapeAbr) }
-                } // All Shapes
-            
-
-             if shapeAbr == "R" ||
-                shapeAbr == "H" {
-                    InputField(label: "Diameter", value: $VM.Diameter, unit: VM.note)
-                        .onChange(of: VM.Diameter) { VM.updateValuesShape(shapeAbr: shapeAbr) }
-                } // Round
- 
+                            VM.updateValuesShape(shapeSelected: shapeSelected) }
+                }
                 
-             if shapeAbr == "O" || shapeAbr == "E" {
-                InputField(label: " Large \n Diameter", value: $VM.DiameterLarge, unit: VM.note)
-                    .onChange(of: VM.DiameterLarge) { VM.updateValuesShape(shapeAbr: shapeAbr) }
- 
-                    InputField(label: " Small \n Diameter", value: $VM.Diametersmall, unit: VM.note)
-                        .onChange(of: VM.Diametersmall) { VM.updateValuesShape(shapeAbr: shapeAbr) }
-                } // open Round & Elliptical Round
+                //MARK: ROUND
+                if shapeSmall == "Round" {
+                    InputField(label: "Diameter", value: $VM.Diameter, unit: VM.note)
+                        .onChange(of: VM.Diameter) { VM.updateValuesShape(shapeSelected: shapeSelected) }
+                    InputField(label: "Height", value: $VM.Height, unit: VM.note)
+                        .onChange(of: VM.Height) { VM.updateValuesShape(shapeSelected: shapeSelected) }
+                }
+                //MARK: Segment
+                if shapeSmall == "Segment" {
+                    InputField(label: "Length", value: $VM.Len, unit: VM.note)
+                        .onChange(of: VM.Len) {
+                            VM.updateValuesShape(shapeSelected: shapeSelected) }
+                    InputField(label: "Width", value: $VM.Width, unit: VM.note)
+                        .onChange(of: VM.Width) { VM.updateValuesShape(shapeSelected: shapeSelected) }
+                    InputField(label: "Height", value: $VM.Height, unit: VM.note)
+                        .onChange(of: VM.Height) { VM.updateValuesShape(shapeSelected: shapeSelected) }
+                }
+                
+                //MARK: Open ROUND
+                if shapeSmall == "Open Round" {
+                    InputField(label: " Outer \n Diameter", value: $VM.Diameter, unit: VM.note)
+                        .onChange(of: VM.Diameter) { VM.updateValuesShape(shapeSelected: shapeSelected) }
+                    InputField(label: " Inner \n Diameter", value: $VM.DiameterIn, unit: VM.note)
+                        .onChange(of: VM.DiameterIn) { VM.updateValuesShape(shapeSelected: shapeSelected) }
+                    InputField(label: "Height", value: $VM.Height, unit: VM.note)
+                        .onChange(of: VM.Height) { VM.updateValuesShape(shapeSelected: shapeSelected) }
+                }
                 
 // MARK: Area output
+ 
                 OutputDecField(label: "Area", value: VM.Area, unit: "sq." + VM.note)
  
                         
 // MARK: Volume output
+ 
                     OutputDecField(label: "Volume", value: VM.Volume, unit: "cu." + VM.note)
        
                         
@@ -302,6 +306,6 @@ struct shapeSmallDetail: View {
         } // Struct
 
 #Preview {
-    MainMenu()
+    MainMenuV4()
 }
-
+*/

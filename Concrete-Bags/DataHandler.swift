@@ -18,29 +18,41 @@ class DataHandler: ObservableObject {
     
     
 
-    // MARK: - Pad A=Length B+Width C=Height D=Diameter E=DiameterIn F=Note G=Shape
-    static func shapeFigs(A: Double, B: Double, C: Double, D: Double, E: Double, F: String, G: String) ->  (Area: Double, Volume: Double, Bags20kg: Double, Bags25kg: Double, Bags30kg: Double) {
+    // MARK: - Pad A=Length B+Width C=Height D=Diameter E=Diametersmall F=Note G=Shape I=DiameterLarge
+    static func shapeFigs(A: Double, B: Double, C: Double, D: Double, E: Double, F: String, G: String, I: Double) ->  (Area: Double, Volume: Double, Bags20kg: Double, Bags25kg: Double, Bags30kg: Double) {
         var Area = 0.0; var Volume = 0.0; var Bags20kg = 0.0; var Bags25kg = 0.0; var Bags30kg = 0.0
 
-        if G == "C" {
+        if G == "C" {  // Concrete Slab
             Area = A * B
             Volume =  A * B * C }
-        else if G == "R" {
-            Area =   .pi * (pow(0.5 * D,2))       // pi * radius squared
-            Volume = .pi * C * (pow(0.5 * D, 2)) } // pi * Radius squared * Height
+      
+        else if G == "O" {  // Open Round
+            Area =   .pi * (pow(0.5 * I,2) - pow(0.5 * E,2))
+            let outerVol: Double = .pi * C * (pow(0.5 * I, 2))
+            let innerVol: Double = .pi * C * (pow(0.5 * E, 2))
+            Volume = outerVol - innerVol }
         
-        else if G == "S" {
+        else if G == "S" {  // Segment
             let AngleX = acos((pow(A, 2) + pow(C, 2) - pow(B, 2)) / (2 * A * C)) * 180 / .pi
             Area =   0.5 * A * C * sin(AngleX * .pi / 180)      // Half the shortest side * the next longest
             Volume = Area * B  }// Half the Base * Length * Height
-       
-        else if G == "O" {
-            Area =   .pi * (pow(0.5 * D,2))
-            let outerVol: Double = .pi * C * (pow(0.5 * D, 2))
-            let innerVol: Double = .pi * C * (pow(0.5 * E, 2))
-            Volume = outerVol - innerVol }
+        
+        else if G == "H" {  // Half Round
+        Area =   0.5 * (.pi * (pow(0.5 * D,2)))       // Half pi * radius squared
+        Volume = 0.5 * (.pi * C * (pow(0.5 * D, 2))) } // Half pi * Radius squared * Height
+        
+        else if G == "E" { // Elliptical Round
+            let radSmall: Double = 0.5 * E
+            let radLarge: Double  = 0.5 * I
+            Area = .pi * (pow(radLarge,2) - pow(radSmall,2) )
+            Volume = .pi * C * (pow(radLarge,2) - pow(radSmall,2) )
+        }
+        
+        else if G == "R" {  // Round
+            Area =   .pi * (pow(0.5 * D,2))       // pi * radius squared
+            Volume = .pi * C * (pow(0.5 * D, 2)) } // pi * Radius squared * Height
 
-        let res: Double = convertToCubicMetres(X:Volume, Y:F)
+        let res: Double = convertToCubicMetres(X:Volume, Y:F)  /// Bag caclulation
        Bags20kg = Double(Int(100 * res))
        Bags25kg = Double(Int(80 * res))
        Bags30kg = Double(Int(60 * res))
@@ -55,39 +67,12 @@ class DataHandler: ObservableObject {
         } else
         if Y == "in" { res = X / 61023.7
         } else
-        if Y == "ft" {
-            let feet = Double(Int(X))  // Extract whole feet
-            let inches = (X - feet) * 10  // Convert decimal part to inches
-            let totalInches = (feet * 12) + inches
-            res = totalInches / 424  // Convert to cubic meters
+        if Y == "ft" { res = X / 35.315
         } else {
             res = X }
         return res
     }
-    
-    static func VolfeetToInches(A: Double, B: Double, C: Double) -> (IntFeet: Double, IntInches: Double) {
-        var IntFeet: Double = 0.0; var IntInches: Double = 0.0
-        let AInches = Double(Int(A) * 12) + (10 * (A - Double(Int(A))))
-        let BInches = Double(Int(B) * 12) + (10 * (B - Double(Int(B))))
-        let CInches = Double(Int(C) * 12) + (10 * (C - Double(Int(C))))
-        let TotInches = AInches * BInches * CInches
-        IntFeet = Double(Int(TotInches / pow(12,3)))
-        IntInches = Double(TotInches - (IntFeet * pow(12,3))) / 144
-        return (IntFeet, IntInches)
-    }
- 
- // A=Length B=Width
-    static func AreafeetToInches(A: Double, B: Double) -> (IntFeet: Double, IntInches: Double) {
-        var IntFeet: Double = 0.0; var IntInches: Double = 0.0
-        let AInches = Double(Int(A) * 12) + (10 * (A - Double(Int(A))))
-        let BInches = Double(Int(B) * 12) + (10 * (B - Double(Int(B))))
-        let TotInches = AInches * BInches
-        IntFeet = Double(TotInches / 144)
-        let remainder = Double(TotInches.remainder(dividingBy: 144))
-        IntInches = Double(remainder / 144 * 12)
-        return (IntFeet, IntInches)
-    }
-    
+
     static func PreInputformat(_ text: String) -> AttributedString {
         var val = AttributedString("  \(text)")
         val.font = .largeTitle
@@ -111,23 +96,7 @@ class DataHandler: ObservableObject {
         val.backgroundColor = .orange
         return val
     }
-/*
-    static func AreaImpformat(_ IntFeet: Double, _ IntInches: Double) -> AttributedString {
-        var val = AttributedString("sq.\(String(format: "%.0f", IntFeet)) ft \(String(format: "%.1f", IntInches)) in")
-        val.font = .largeTitle
-       val.foregroundColor = .black
-        val.backgroundColor = .orange
-        return val
-    }
-*/
-    static func VolImpformat(_ IntFeet: Double, _ IntInches: Double) -> AttributedString {
-        var val = AttributedString("cu.\(String(format: "%.0f", IntFeet)) ft \(String(format: "%.1f", IntInches)) in")
-        val.font = .largeTitle
-        val.foregroundColor = .black
-        val.backgroundColor = .orange
-        return val
-    }
-    
+
     static func VolDecformat(_ Volume: Double, _ note: String) -> AttributedString {
         var val = AttributedString("\(String(format: "%.2f",(Volume))) cu.\(note)")
         val.font = .largeTitle
