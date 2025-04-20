@@ -18,14 +18,28 @@ class DataHandler: ObservableObject {
     
     
 
-    // MARK: - Pad A=Length B+Width C=Height D=Diameter E=Diametersmall F=Note G=Shape I=DiameterLarge
-    static func shapeFigs(A: Double, B: Double, C: Double, D: Double, E: Double, F: String, G: String, I: Double) ->  (Area: Double, Volume: Double, Bags20kg: Double, Bags25kg: Double, Bags30kg: Double) {
-        var Area = 0.0; var Volume = 0.0; var Bags20kg = 0.0; var Bags25kg = 0.0; var Bags30kg = 0.0
-
+    // MARK: - Pad A=LengthA B+Width C=Height D=Diameter E=Diametersmall F=Note G=Shape I=DiameterLarge J=LengthB K=ratioSelected
+    static func shapeFigs(A: Double, B: Double, C: Double, D: Double, E: Double, F: String, G: String, I: Double, J: Double, K: String) ->
+    (Area: Double,
+     Volume: Double,
+     BagsCement20kg: Double,
+     BagsCement25kg: Double,
+     BagsCement30kg: Double,
+     BagsSand20kg: Double,
+     BagsSand25kg: Double,
+     BagsSand30kg: Double,
+     BagsAggregate20kg: Double,
+     BagsAggregate25kg: Double,
+     BagsAggregate30kg: Double
+    )
+    {
+        var Area = 0.0; var Volume = 0.0; var BagsCement20kg = 0.0; var BagsCement25kg = 0.0; var BagsCement30kg = 0.0; var BagsSand20kg = 0.0; var BagsSand25kg = 0.0; var BagsSand30kg = 0.0; var BagsAggregate20kg = 0.0; var BagsAggregate25kg = 0.0; var BagsAggregate30kg = 0.0
+        
+        
         if G == "C" {  // Concrete Slab
             Area = A * B
             Volume =  A * B * C }
-      
+        
         else if G == "O" {  // Open Round
             Area =   .pi * (pow(0.5 * I,2) - pow(0.5 * E,2))
             let outerVol: Double = .pi * C * (pow(0.5 * I, 2))
@@ -33,12 +47,14 @@ class DataHandler: ObservableObject {
             Volume = outerVol - innerVol }
         
         else if G == "S" {  // Segment
-            Area =   0.5 * B * A     // Half the shortest side * the next longest
-            Volume = Area * C  }// Half the Base * Length * Height
+            let semi: Double = 0.5 * (A + B + J)  // semi is the semi perimeter
+            let deter: Double = semi * (semi - A) * (semi - B) * (semi - J)
+            Area =   sqrt(max(deter,0))  /// prevents negative numbers
+            Volume = Area * C  }
         
         else if G == "H" {  // Half Round
-        Area =   0.5 * (.pi * (pow(0.5 * D,2)))       // Half pi * radius squared
-        Volume = 0.5 * (.pi * C * (pow(0.5 * D, 2))) } // Half pi * Radius squared * Height
+            Area =   0.5 * (.pi * (pow(0.5 * D,2)))       // Half pi * radius squared
+            Volume = 0.5 * (.pi * C * (pow(0.5 * D, 2))) } // Half pi * Radius squared * Height
         
         else if G == "E" { // Elliptical Round
             let radSmall: Double = 0.5 * E
@@ -50,12 +66,45 @@ class DataHandler: ObservableObject {
         else if G == "R" {  // Round
             Area =   .pi * (pow(0.5 * D,2))       // pi * radius squared
             Volume = .pi * C * (pow(0.5 * D, 2)) } // pi * Radius squared * Height
-
+ 
         let res: Double = convertToCubicMetres(X:Volume, Y:F)  /// Bag caclulation
-       Bags20kg = Double(Int(100 * res))
-       Bags25kg = Double(Int(80 * res))
-       Bags30kg = Double(Int(60 * res))
-        return (Area, Volume, Bags20kg, Bags25kg, Bags30kg)
+      
+        var Cem = 0.0
+        var Sand = 0.0
+        var Agg = 0.0
+        if K == "Basic" {
+            Cem = 1.0 ; Sand = 3.0 ; Agg = 6.0
+        } else
+        if K == "Medium" {
+            Cem = 1.0 ; Sand = 2.0 ; Agg = 4.0
+           } else
+        if K == "Strong" {
+               Cem = 1.0 ; Sand = 1.5 ; Agg = 3.0
+           }
+        let totmix: Double = Double(Cem + Sand + Agg)
+        BagsCement20kg = Double(Int(res * Cem/(totmix) * 2225 / 20))
+        BagsCement25kg = Double(Int(res * Cem/(totmix) * 2225 / 25))
+        BagsCement30kg = Double(Int(res * Cem/(totmix) * 2225 / 30))
+        BagsSand20kg = Double(Int(res * Sand/(totmix) * 2225 / 20))
+        BagsSand25kg = Double(Int(res * Sand/(totmix) * 2225 / 25))
+        BagsSand30kg = Double(Int(res * Sand/(totmix) * 2225 / 30))
+        BagsAggregate20kg = Double(Int(res * Agg/(totmix) * 2225 / 20))
+        BagsAggregate25kg = Double(Int(res * Agg/(totmix) * 2225 / 25))
+        BagsAggregate30kg = Double(Int(res * Agg/(totmix) * 2225 / 30))
+//        print("Cement 20 kg: \(BagsCement20kg) 25kg: \(BagsCement25kg) 30kg: \(BagsCement30kg)")
+//        print("Sand 20 kg: \(BagsSand20kg) 25kg: \(BagsSand25kg) 30kg: \(BagsSand30kg)")
+//        print("Agg 20 kg: \(BagsAggregate20kg) 25kg: \(BagsAggregate25kg) 30kg: \(BagsAggregate30kg)")
+        
+        return (Area, Volume,
+                BagsCement20kg,
+                BagsCement25kg,
+                BagsCement30kg,
+                BagsSand20kg,
+                BagsSand25kg,
+                BagsSand30kg,
+                BagsAggregate20kg,
+                BagsAggregate25kg,
+                BagsAggregate30kg)
     }
 
     static func convertToCubicMetres(X: Double, Y: String) -> Double { // X=Volume, Y=Note

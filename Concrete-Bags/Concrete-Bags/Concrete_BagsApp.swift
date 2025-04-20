@@ -11,9 +11,8 @@ import SwiftUI
 struct Concrete_BagsApp: App {
     var body: some Scene {
         WindowGroup {
-//            NavigationStack {
                 MainMenu()
             }
         }
     }
-// }
+
