@@ -68,7 +68,6 @@ class DataHandler: ObservableObject {
             Volume = .pi * C * (pow(0.5 * D, 2)) } // pi * Radius squared * Height
  
         let res: Double = convertToCubicMetres(X:Volume, Y:F)  /// Bag caclulation
-      
         var Cem = 0.0
         var Sand = 0.0
         var Agg = 0.0
@@ -82,18 +81,16 @@ class DataHandler: ObservableObject {
                Cem = 1.0 ; Sand = 1.5 ; Agg = 3.0
            }
         let totmix: Double = Double(Cem + Sand + Agg)
-        BagsCement20kg = Double(Int(res * Cem/(totmix) * 2225 / 20))
-        BagsCement25kg = Double(Int(res * Cem/(totmix) * 2225 / 25))
-        BagsCement30kg = Double(Int(res * Cem/(totmix) * 2225 / 30))
-        BagsSand20kg = Double(Int(res * Sand/(totmix) * 2225 / 20))
-        BagsSand25kg = Double(Int(res * Sand/(totmix) * 2225 / 25))
-        BagsSand30kg = Double(Int(res * Sand/(totmix) * 2225 / 30))
-        BagsAggregate20kg = Double(Int(res * Agg/(totmix) * 2225 / 20))
-        BagsAggregate25kg = Double(Int(res * Agg/(totmix) * 2225 / 25))
-        BagsAggregate30kg = Double(Int(res * Agg/(totmix) * 2225 / 30))
-//        print("Cement 20 kg: \(BagsCement20kg) 25kg: \(BagsCement25kg) 30kg: \(BagsCement30kg)")
-//        print("Sand 20 kg: \(BagsSand20kg) 25kg: \(BagsSand25kg) 30kg: \(BagsSand30kg)")
-//        print("Agg 20 kg: \(BagsAggregate20kg) 25kg: \(BagsAggregate25kg) 30kg: \(BagsAggregate30kg)")
+        
+        BagsCement20kg = roundUp(value: Double(res * Cem/(totmix) * 2225 / 20), toNearest: 0.5)
+        BagsCement25kg = roundUp(value: Double(res * Cem/(totmix) * 2225 / 25), toNearest: 0.5)
+        BagsCement30kg = roundUp(value: Double(res * Cem/(totmix) * 2225 / 30), toNearest: 0.5)
+        BagsSand20kg = roundUp(value: Double(res * Sand/(totmix) * 2225 / 20), toNearest: 0.5)
+        BagsSand25kg = roundUp(value: Double(res * Sand/(totmix) * 2225 / 25), toNearest: 0.5)
+        BagsSand30kg = roundUp(value: Double(res * Sand/(totmix) * 2225 / 30), toNearest: 0.5)
+        BagsAggregate20kg = roundUp(value: Double(res * Agg/(totmix) * 2225 / 20) , toNearest: 0.5)
+        BagsAggregate25kg = roundUp(value: Double(res * Agg/(totmix) * 2225 / 25), toNearest: 0.5)
+        BagsAggregate30kg = roundUp(value: Double(res * Agg/(totmix) * 2225 / 30), toNearest: 0.5)
         
         return (Area, Volume,
                 BagsCement20kg,
@@ -105,6 +102,10 @@ class DataHandler: ObservableObject {
                 BagsAggregate20kg,
                 BagsAggregate25kg,
                 BagsAggregate30kg)
+    }
+    
+    static func roundUp(value: Double, toNearest: Double) -> Double {
+        return ceil(value / toNearest) * toNearest // Round to nearest 1/2 bag
     }
 
     static func convertToCubicMetres(X: Double, Y: String) -> Double { // X=Volume, Y=Note
